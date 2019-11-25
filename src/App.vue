@@ -30,7 +30,7 @@ export default {
   },
   data() {
     return {
-      socket: io('localhost:3000'),
+      socket: io('http://otherplan.tk:3000/'),
       brushConfig: {
         size: 10,
         color: "#ffffff"
