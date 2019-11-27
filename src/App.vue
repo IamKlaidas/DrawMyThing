@@ -2,7 +2,7 @@
   <div>
     <TopBar />
     <div class="displayContentCenter">
-      <Online />
+      <Online :socket="this.socket" />
       <Canvas :socket="this.socket" :appConfigData="this.brushConfig" />
       <Chat :socket="this.socket" />
     </div>
@@ -30,12 +30,15 @@ export default {
   },
   data() {
     return {
-      socket: io('http://otherplan.tk:3000/'),
+      socket: io('http://localhost:3000/'),
       brushConfig: {
         size: 10,
         color: "#ffffff"
       }
     }
+  },
+  mounted() {
+    this.socket.emit('user connected');
   },
   methods: {
     updateBurshConfig: function(config) {

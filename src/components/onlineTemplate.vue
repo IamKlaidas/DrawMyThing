@@ -24,16 +24,40 @@
 // 10 max players in a game.
 export default {
   name: 'onlineTempalte',
+  props: {
+    socket: {
+      type: Object
+    }
+  },
   data() {
     return {
-      userOnlineList: [
-        {
-          position: "#1",
-          name: "Jimmy",
-          points: 0,
-          cardColor: "#ffffff"
-        }
-      ]
+      userOnlineList: []
+    }
+  },
+  mounted() {
+    let vm = this;
+    this.socket.on('user online', function(data) {
+      vm.userOnlineList = [];
+      for (let index = 0; index < data.length; index++) {
+        vm.userOnlineList.push({
+          position: "",
+          name: data[index].name,
+          points: data[index].points,
+          cardColor: vm.getColor(vm.userOnlineList.length)
+        });
+      }
+    });
+  },
+  methods: {
+    getColor: function(number) {
+      if ((number % 2) == 0) {
+        return "#ffffff";
+      } else {
+        return "#ffffff";
+      }
+    },
+    updateOrder: function() {
+      //do something
     }
   }
 }
