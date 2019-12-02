@@ -15,22 +15,62 @@
 
 export default {
   name: 'topTemplate',
+  props: {
+    startTimer: {
+      type: Boolean
+    },
+    currentArtistID: {
+      type: String
+    },
+    pickedWord: {
+      type: String
+    },
+    socket: {
+      type: Object
+    }
+  },
   data() {
     return {
       timer: 60,
+      currentUser: "",
       round: {
         current: 1,
         total: 5
       },
       word: {
         hidden: "",
-        unhidden: "Rabbit"
+        unhidden: ""
       }
     }
   },
   mounted() {
-    for (let hiddenIteration = 0; hiddenIteration < this.word.unhidden.length; hiddenIteration++) {
-      this.word.hidden += "_ ";
+    let vm = this
+
+    this.socket.on("restart round", function() {
+      vm.round.current += 1;
+      vm.timer = 60;
+    });
+
+    this.socket.on("word change", function(word) {
+      vm.setHiddenWord(word);
+    });
+
+    setTimeout(function() {
+      vm.setHiddenWord(vm.pickedWord);
+    }, 250);
+  },
+  methods: {
+    setHiddenWord: function(word) {
+      this.currentUser = localStorage.getItem("uniqueIdentifier");
+      this.word.unhidden = word;
+      if (this.currentUser != this.currentArtistID) {
+        this.word.hidden = "";
+        for (let hiddenIteration = 0; hiddenIteration < this.word.unhidden.length; hiddenIteration++) {
+          this.word.hidden += "_ ";
+        }
+      } else {
+        this.word.hidden = this.word.unhidden;
+      }
     }
   }
 }

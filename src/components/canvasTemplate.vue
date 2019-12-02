@@ -1,15 +1,21 @@
 <template>
   <div class="canvasContainer">
+    <Cover v-if="this.currentArtistID == this.uniqueIdentifier" :socket="this.socket"/>
     <canvas id="canvas" width="1024px" height="576px"></canvas>
   </div>
 </template>
 
 <script>
   import jQuery from "jquery";
+  import Cover from "./canvasCoverTemplate.vue"
+
 
   export default {
     name: 'canvasTemplate',
     props: {
+      currentArtistID: {
+        type: String
+      },
       socket: {
         type: Object
       },
@@ -17,9 +23,13 @@
         type: Object
       }
     },
+    components: {
+      Cover
+    },
     data() {
       return {
-        pwd: "",
+        round: 1,
+        uniqueIdentifier: "",
         config: {
           ctx: "",
           positions: {
@@ -42,38 +52,25 @@
     mounted() {
       const $ = jQuery;
       window.$ = $;
-
-      this.pwd = localStorage.getItem("pwd");
       this.config.ctx = document.getElementById('canvas').getContext("2d");
-      let vm = this; 
+      let vm = this;
+
+      this.socket.on("restart round", function() {
+        //restart canvas, let the next user draw
+      });
 
       setInterval(function() {
         vm.config.current.brushSize = vm.appConfigData.size;
         vm.config.current.brushColor = vm.appConfigData.color;
+        vm.uniqueIdentifier = localStorage.getItem("uniqueIdentifier");
       }, 1000/60)
 
-      if (this.pwd == 'test') {
-        $('#canvas').mousedown(function(event) {
-          vm.config.prop.isPainting = true;
-          vm.appendMouseClick(event.pageX - this.offsetLeft, event.pageY - this.offsetTop);
-          vm.drawBoard(vm.config);
-        });
-
-        $('#canvas').mousemove(function(event) {
-          if (vm.config.prop.isPainting) {
-            vm.appendMouseClick(event.pageX - this.offsetLeft, event.pageY - this.offsetTop, true);
-            vm.drawBoard(vm.config);
-          }
-        });
-
-        $('#canvas').mouseup(function() { //event
-          vm.config.prop.isPainting = false;
-        });
-
-        $('#canvas').mouseleave(function() { //event
-          vm.config.prop.isPainting = false;
-        });
-      }
+      setTimeout(function() {
+        // console.log(`id: ${vm.uniqueIdentifier} - current: ${vm.currentArtistID}`);
+        if(vm.round == 1) {
+          vm.mouseChecker();
+        }
+      }, 1000);
 
       this.socket.on('update canvas', function(config) {
         vm.drawBoard(config);
@@ -87,6 +84,34 @@
 
     },
     methods: {
+      mouseChecker: function() {
+        let vm = this; 
+        const $ = jQuery;
+        window.$ = $;
+
+        if (this.uniqueIdentifier == this.currentArtistID) {
+          $('#canvas').mousedown(function(event) {
+            vm.config.prop.isPainting = true;
+            vm.appendMouseClick(event.pageX - this.offsetLeft, event.pageY - this.offsetTop);
+            vm.drawBoard(vm.config);
+          });
+
+          $('#canvas').mousemove(function(event) {
+            if (vm.config.prop.isPainting) {
+              vm.appendMouseClick(event.pageX - this.offsetLeft, event.pageY - this.offsetTop, true);
+              vm.drawBoard(vm.config);
+            }
+          });
+
+          $('#canvas').mouseup(function() { //event
+            vm.config.prop.isPainting = false;
+          });
+
+          $('#canvas').mouseleave(function() { //event
+            vm.config.prop.isPainting = false;
+          });
+        }
+      },
       switchSize: function(size) {
         this.config.current.size = size;
       },

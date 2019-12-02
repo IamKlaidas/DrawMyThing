@@ -1,44 +1,74 @@
 <template>
   <div>
-    <TopBar />
+    <ScreenCover v-if="this.playerCount < this.minimumPlayers" />
+    <TopBar :startTimer="this.gameStart" :currentArtistID="this.currentArtist" :pickedWord="currentWord" :socket="this.socket"/>
     <div class="displayContentCenter">
-      <Online :socket="this.socket" />
-      <Canvas :socket="this.socket" :appConfigData="this.brushConfig" />
+      <Online :socket="this.socket" :currentArtistID="this.currentArtist" />
+      <Canvas :currentArtistID="this.currentArtist" :socket="this.socket" :appConfigData="this.brushConfig" />
       <Chat :socket="this.socket" />
     </div>
-    <Tool @brushConfig="updateBurshConfig" />
+    <Tool v-if="this.uniqueIdentifier == this.currentArtist" @brushConfig="updateBurshConfig" />
   </div>
 </template>
 
 <script>
-  import Canvas from './components/canvasTemplate.vue'
-  import Online from './components/onlineTemplate.vue'
-  import Chat from './components/chatTemplate.vue'
-  import TopBar from './components/topTemplate.vue'
-  import Tool from './components/toolTemplate.vue'
-  import io from 'socket.io-client';
+  import Canvas from "./components/canvasTemplate.vue"
+  import Online from "./components/onlineTemplate.vue"
+  import Chat from "./components/chatTemplate.vue"
+  import TopBar from "./components/topTemplate.vue"
+  import Tool from "./components/toolTemplate.vue"
+  import ScreenCover from "./components/coverTemplate.vue"
+  import io from "socket.io-client";
 
 
 export default {
-  name: 'app',
+  name: "app",
   components: {
     Canvas,
     Online,
     Chat,
     TopBar,
-    Tool
+    Tool,
+    ScreenCover
   },
   data() {
     return {
-      socket: io('http://localhost:3000/'),
+      socket: io("http://localhost:3000/"),
+      gameStart: false,
+      uniqueIdentifier: "",
+      playerCount: 0,
+      minimumPlayers: 2,
+      currentArtist: "",
       brushConfig: {
         size: 10,
         color: "#ffffff"
-      }
+      },
+      currentWord: "",
     }
   },
   mounted() {
-    this.socket.emit('user connected');
+    this.socket.emit("user connected");
+    let vm = this;
+    this.socket.on("user count", function(userCount) {
+      vm.playerCount = userCount;
+    })
+    this.socket.on("set Local", function(data) {
+      localStorage.setItem("socketID", data.id);
+      localStorage.setItem("uniqueIdentifier", data.uniqueID);
+      vm.uniqueIdentifier = data.uniqueID;
+    })
+    this.socket.on("current artist", function(current) {
+      vm.currentArtist = current;
+    });
+
+    setInterval(function() {
+      if (vm.playerCount < vm.minimumPlayers) {
+        vm.gameStart = true;
+      } else {
+        vm.gameStart = false;
+      }
+      // console.log(vm.currentArtist, vm.uniqueIdentifier);
+    }, 1000);
   },
   methods: {
     updateBurshConfig: function(config) {
@@ -54,7 +84,7 @@ export default {
     padding: 0px;
     background-color: #e2e2e5;
     overflow: hidden;
-    font-family: 'Inter UI', sans-serif;
+    font-family: "Inter UI", sans-serif;
   }
 
   .displayVerticallyCenter {

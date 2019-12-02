@@ -1,12 +1,12 @@
 <template>
   <div class="chatContainer">
     <div class="messageContainer">
-      <p  class="normalText displayHorizontalCenter" v-bind:key="content.id" v-for="content in messages" v-bind:style="{ 'background-color': content.BGColor }">
+      <p class="normalText displayHorizontalCenter" v-bind:key="content.id" v-for="content in messages" v-bind:style="{ 'background-color': content.BGColor, 'color': content.textColor }">
         {{ content.msg }}
       </p>
     </div>
     <div class="textBoxContainer displayCenter">
-      <input v-on:keyup.enter="emitMessage()" type="text" class="normalText" v-model="currentMessage">
+      <input id="input" v-on:keyup.enter="emitMessage()" type="text" class="normalText" v-model="currentMessage">
     </div>
   </div>
 </template>
@@ -23,6 +23,7 @@
     },
     data() {
       return {
+        secretWord: "",
         currentMessage: "",
         messages: []
       }
@@ -32,13 +33,29 @@
       window.$ = $;
       let vm = this;
 
-      this.socket.on("send Message", function(message) {
-        if (message == "rabbit") {
-          console.log("word got")
+      this.socket.on("restart round", function() {
+        document.getElementById("input").disabled = false;
+      });
+
+      this.socket.on("word change", function(word) {
+        vm.secretWord = word;
+        console.log("new", vm.secretWord);
+      })
+
+      this.socket.on("send Message", function(data) {
+        if (data.correct) {
+          vm.messages.push({
+            msg: `Great you've you got it: "${data.message}", +1 point`,
+            BGColor: vm.getColor(vm.messages.length),
+            textColor: "#56ce27"
+          });
+          document.getElementById("input").disabled = true;
+          vm.emitCorrect(localStorage.getItem("socketID"));
         } else {
           vm.messages.push({
-            msg: message,
-            BGColor: vm.getColor(vm.messages.length)
+            msg: data.message,
+            BGColor: vm.getColor(vm.messages.length),
+            textColor: "#000000"
           });
         }
         setTimeout(function() {
@@ -47,6 +64,10 @@
       })
     },
     methods: {
+      emitCorrect(id) {
+        this.socket.emit("increment score", {score: 1, id: localStorage.getItem("uniqueIdentifier")});
+        this.socket.emit("update onlineColor", {hex: "#97d87f", emitTo: id});
+      },
       getColor: function(number) {
         if ((number % 2) == 0) {
           return "transparent";
@@ -55,7 +76,7 @@
         }
       },
       emitMessage: function() {
-        this.socket.emit("send Message", this.currentMessage);
+        this.socket.emit("send Message", {message: this.currentMessage, id: localStorage.getItem("socketID")});
         this.currentMessage = ""
       }
     }

@@ -113,7 +113,6 @@ export default {
       this.emitData(size, this.currentSelectedColor);
     },
     emitData: function(size, color) {
-      console.log("emit")
       this.$emit("brushConfig", {
         size: size,
         color: color
