@@ -41,20 +41,25 @@ export default {
   mounted() {
     let vm = this;
 
+    this.socket.on("update color", function(data) {
+      if (vm.userOnlineList.length > 2) {
+        for (let index = 0; index < vm.userOnlineList.length; index++) {
+          if (vm.userOnlineList[index].id == data.id) {
+            console.log("test1")
+            document.getElementById(data.id).style.backgroundColor = "#97d87f";
+          }
+        }
+      }
+    })
+
     this.socket.on("restart round", function() {
       for (let index = 0; index < vm.userOnlineList.length; index++) {
+        console.log("test")
         document.getElementsByClassName("userContainer")[index].style.backgroundColor = vm.userOnlineList[index].cardColor;
       }
       document.getElementById("input").disabled = false;
     });
-
-    this.socket.on("update color", function(data) {
-      for (let index = 0; index < vm.userOnlineList.length; index++) {
-        if (vm.userOnlineList[index].id == data.id) {
-          document.getElementById(data.id).style.backgroundColor = "#97d87f";
-        }
-      }
-    })
+    
     //set max players to be 10
     this.socket.on('user online', function(data) {
       vm.userOnlineList = [];

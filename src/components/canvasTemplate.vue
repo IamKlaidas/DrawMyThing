@@ -28,6 +28,7 @@
     },
     data() {
       return {
+        originalState: "",
         round: 1,
         uniqueIdentifier: "",
         config: {
@@ -50,13 +51,38 @@
       }
     }, 
     mounted() {
+      this.originalState = document.getElementById('canvas').cloneNode(true);
       const $ = jQuery;
       window.$ = $;
       this.config.ctx = document.getElementById('canvas').getContext("2d");
       let vm = this;
 
-      this.socket.on("restart round", function() {
-        //restart canvas, let the next user draw
+      this.socket.on("restart round", function(artistID) {
+        $('#canvas').off("mousedown");
+        $('#canvas').off("mousemove");
+        $('#canvas').off("mouseleave");
+        $('#canvas').off("mouseup");
+        vm.uniqueIdentifier = localStorage.getItem("uniqueIdentifier");
+        vm.config = {
+          ctx: "",
+          positions: {
+            x: [],
+            y: [],
+            drag: []
+          },
+          prop: {
+            width: [],
+            color: [],
+            isPainting: false
+          },
+          current: {
+            brushSize: vm.appConfigData.size,
+            brushColor: vm.appConfigData.color
+          }
+        }
+        vm.config.ctx = document.getElementById('canvas').getContext("2d");
+        vm.drawBoard(vm.config);
+        vm.mouseChecker(artistID);
       });
 
       setInterval(function() {
@@ -68,7 +94,7 @@
       setTimeout(function() {
         // console.log(`id: ${vm.uniqueIdentifier} - current: ${vm.currentArtistID}`);
         if(vm.round == 1) {
-          vm.mouseChecker();
+          vm.mouseChecker(vm.currentArtistID);
         }
       }, 1000);
 
@@ -84,30 +110,30 @@
 
     },
     methods: {
-      mouseChecker: function() {
+      mouseChecker: function(currentArtistID) {
         let vm = this; 
         const $ = jQuery;
         window.$ = $;
 
-        if (this.uniqueIdentifier == this.currentArtistID) {
-          $('#canvas').mousedown(function(event) {
+        if (this.uniqueIdentifier == currentArtistID) {
+          $('#canvas').on("mousedown", function(event) {
             vm.config.prop.isPainting = true;
             vm.appendMouseClick(event.pageX - this.offsetLeft, event.pageY - this.offsetTop);
             vm.drawBoard(vm.config);
           });
 
-          $('#canvas').mousemove(function(event) {
+          $('#canvas').on("mousemove", function(event) {
             if (vm.config.prop.isPainting) {
               vm.appendMouseClick(event.pageX - this.offsetLeft, event.pageY - this.offsetTop, true);
               vm.drawBoard(vm.config);
             }
           });
 
-          $('#canvas').mouseup(function() { //event
+          $('#canvas').on("mouseup", function() { //event
             vm.config.prop.isPainting = false;
           });
 
-          $('#canvas').mouseleave(function() { //event
+          $('#canvas').on("mouseleave", function() { //event
             vm.config.prop.isPainting = false;
           });
         }
