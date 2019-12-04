@@ -49,6 +49,16 @@ export default {
     this.socket.on("restart round", function() {
       vm.round.current += 1;
       vm.timer = 60;
+      if (vm.round.current == 6) {
+        vm.socket.emit("get positions");
+      }
+    });
+
+    this.socket.on("decrease timer", function(time) {
+      vm.timer = time;
+      if (vm.timer == 0 && vm.currentArtistID == localStorage.getItem("uniqueIdentifier")) {
+        vm.socket.emit("next round");
+      }
     });
 
     this.socket.on("word change", function(word) {

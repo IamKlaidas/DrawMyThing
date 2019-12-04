@@ -1,13 +1,21 @@
 <template>
   <div>
-    <ScreenCover v-if="this.playerCount < this.minimumPlayers" />
-    <TopBar :startTimer="this.gameStart" :currentArtistID="this.currentArtist" :pickedWord="currentWord" :socket="this.socket"/>
-    <div class="displayContentCenter">
-      <Online :socket="this.socket" :currentArtistID="this.currentArtist" />
-      <Canvas :currentArtistID="this.currentArtist" :socket="this.socket" :appConfigData="this.brushConfig" />
-      <Chat :socket="this.socket" />
+    <div v-if="this.screen == 'start'">
+      <startTemplate />
     </div>
-    <Tool v-if="this.uniqueIdentifier == this.currentArtist" @brushConfig="updateBurshConfig" />
+    <div v-if="this.screen == 'game'">
+      <ScreenCover v-if="this.playerCount < this.minimumPlayers" />
+      <TopBar :startTimer="this.gameStart" :currentArtistID="this.currentArtist" :pickedWord="currentWord" :socket="this.socket"/>
+      <div class="displayContentCenter">
+        <Online :socket="this.socket" :currentArtistID="this.currentArtist" />
+        <Canvas :currentArtistID="this.currentArtist" :socket="this.socket" :appConfigData="this.brushConfig" />
+        <Chat :socket="this.socket" />
+      </div>
+      <Tool v-if="this.uniqueIdentifier == this.currentArtist" @brushConfig="updateBurshConfig" />
+    </div>
+    <div v-if="this.screen == 'end'">
+      <endTemplate :socket="this.socket" />
+    </div>
   </div>
 </template>
 
@@ -18,6 +26,8 @@
   import TopBar from "./components/topTemplate.vue"
   import Tool from "./components/toolTemplate.vue"
   import ScreenCover from "./components/coverTemplate.vue"
+  import startTemplate from "./components/startTemplate.vue"
+  import endTemplate from "./components/endTemplate.vue"
   import io from "socket.io-client";
 
 
@@ -29,11 +39,14 @@ export default {
     Chat,
     TopBar,
     Tool,
-    ScreenCover
+    ScreenCover,
+    startTemplate,
+    endTemplate
   },
   data() {
     return {
       socket: io("http://localhost:3000/"),
+      screen: 'game',
       gameStart: false,
       uniqueIdentifier: "",
       playerCount: 0,
@@ -49,6 +62,7 @@ export default {
   mounted() {
     this.socket.emit("user connected");
     let vm = this;
+
     this.socket.on("user count", function(userCount) {
       vm.playerCount = userCount;
     })
@@ -62,13 +76,19 @@ export default {
     });
 
     setInterval(function() {
-      if (vm.playerCount < vm.minimumPlayers) {
-        vm.gameStart = true;
-      } else {
-        vm.gameStart = false;
+      if (vm.currentArtist == localStorage.getItem("uniqueIdentifier")) {
+        if (vm.playerCount < vm.minimumPlayers) {
+          vm.socket.emit("reset timer");
+        } else {
+          vm.socket.emit("decrease timer");
+        }
       }
-      // console.log(vm.currentArtist, vm.uniqueIdentifier);
     }, 1000);
+
+    this.socket.on("end screen", function(data) {
+      vm.endScreen = 'end';
+      vm.useless = data;
+    });
   },
   methods: {
     updateBurshConfig: function(config) {

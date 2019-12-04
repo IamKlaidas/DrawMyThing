@@ -14,9 +14,9 @@
       </div>
       <div class="avatarContainer"></div>
     </div>
-    <div v-if="this.uniqueID != this.currentArtistID" class="voteKickContainer displayCenter">
+    <!-- <div v-if="this.uniqueID != this.currentArtistID" class="voteKickContainer displayCenter">
       <p class="smallerText">Vote Kick</p>
-    </div>
+    </div> -->
   </div>
 </template>
 
@@ -41,6 +41,10 @@ export default {
   mounted() {
     let vm = this;
 
+    this.socket.on("send positions", function() {
+      vm.socket.emit("end game", vm.order(vm.userOnlineList));
+    })
+
     this.socket.on("update color", function(data) {
       if (vm.userOnlineList.length > 2) {
         for (let index = 0; index < vm.userOnlineList.length; index++) {
@@ -58,6 +62,7 @@ export default {
         document.getElementsByClassName("userContainer")[index].style.backgroundColor = vm.userOnlineList[index].cardColor;
       }
       document.getElementById("input").disabled = false;
+      vm.userOnlineList = vm.updateOrder(vm.userOnlineList);
     });
     
     //set max players to be 10
@@ -65,7 +70,7 @@ export default {
       vm.userOnlineList = [];
       for (let index = 0; index < data.length; index++) {
         vm.userOnlineList.push({
-          position: "",
+          position: vm.userOnlineList.length+1,
           id: data[index].id,
           name: data[index].name,
           points: data[index].points,
@@ -73,6 +78,10 @@ export default {
         });
       }
     });
+
+    // setInterval(function() {
+    //   vm.userOnlineList = vm.updateOrder(vm.userOnlineList);
+    // }, 1000);
     // setTimeout(function() {
     //   setInterval(function() {
     //     if (vm.userOnlineList.length >= 2 && vm.currentArtistID == localStorage.getItem("uniqueIdentifier")) {
@@ -91,8 +100,27 @@ export default {
         return "#ffffff";
       }
     },
-    updateOrder: function() {
-      //do something
+    order: function(arr) {
+      for (let pass = 0; pass < arr.length; arr++) {
+        for (let index = 0; index < arr.length; arr++) {
+          if (arr[pass].position < arr[index].position) {
+            let temp = arr[pass];
+            arr[pass] = arr[index];
+            arr[index] = temp;
+          }
+        }
+      }
+    },
+    updateOrder: function(arr) {
+      for (let pass = 0; pass < arr.length; arr++) {
+        for (let index = 0; index < arr.length; arr++) {
+          if (arr[pass].points < arr[index].points) {
+            let temp = arr[pass].position;
+            arr[pass].position = arr[index].position;
+            arr[index].position = temp;
+          }
+        }
+      }
     }
   }
 }
