@@ -28,17 +28,22 @@ export default {
   props: {
     socket: {
       type: Object
+    },
+    playerPosition: {
+      type: Object
     }
   },
   data() {
     return {
-      playerPosition: []
+      test: []
     }
   },
   mounted() {
     let vm = this
     this.socket.on("end screen", function(data) {
-      vm.playerPosition = data;
+      setTimeout(function() {
+        vm.playerPosition = data;
+      }, 1000)
     });
   }
 }

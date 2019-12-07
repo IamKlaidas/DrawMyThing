@@ -14,7 +14,7 @@
       <Tool v-if="this.uniqueIdentifier == this.currentArtist" @brushConfig="updateBurshConfig" />
     </div>
     <div v-if="this.screen == 'end'">
-      <endTemplate :socket="this.socket" />
+      <endTemplate :socket="this.socket" :playerPosition="this.useless" />
     </div>
   </div>
 </template>
@@ -57,6 +57,7 @@ export default {
         color: "#ffffff"
       },
       currentWord: "",
+      useless: {}
     }
   },
   mounted() {
@@ -86,8 +87,8 @@ export default {
     }, 1000);
 
     this.socket.on("end screen", function(data) {
-      vm.endScreen = 'end';
       vm.useless = data;
+      vm.screen = 'end';
     });
   },
   methods: {
