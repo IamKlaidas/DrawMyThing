@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+  <head>
+    <meta charset="utf-8">
+    <title>game</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/2.2.0/socket.io.js"></script>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/vue/dist/vue.js"></script>
+    <style>
+      .chatBoxContainer { width: 400px;border:2px solid black;height: 600px; }
+      .chatbox { height: 92%;width: 100%; }
+      .chatbox p { height: auto;width: 100%; }
+      .inputBox { height: 4%;width: 99%; }
+    </style>
+  </head>
+  <body>
+    <div id="app">
+      <div class="wordContainer">
+        <p>{{ word.hidden }}</p>
+      </div>
+      <div class="chatBoxContainer">
+        <div class="chatbox"></div>
+        <input class="inputBox" v-on:keyup.enter="emitMessage" v-model="inputContent" type="text">
+      </div>
+    </div>
+    <script>
+      let app = new Vue({
+        el: '#app',
+        data: {
+          socket: io(),
+          inputContent: "",
+          word: {
+            unhidden: "rabbit",
+            hidden: ""
+          }
+        },
+        mounted: function() {
+
+          for (let hiddenIteration = 0; hiddenIteration < this.word.unhidden.length; hiddenIteration++) {
+            this.word.hidden += "_ ";
+          }
+
+          // this.pwd = localStorage.getItem("pwd");
+          self = this
+          this.socket.on('send Message', function(message) {
+            if (message == self.word.unhidden) {
+              console.log("word got")
+            } else {
+              $('.chatbox').append(`<p>${message}</p>`);
+            }
+          })
+
+          setTimeout(function() {
+            let letterIndex = self.rdnNumber(0, self.word.unhidden.length-1)
+            console.log("5 seconds has passed.", self.word.unhidden[letterIndex]);
+            let tempHidden = self.word.hidden.split(" ");
+            tempHidden[letterIndex] = self.word.unhidden[letterIndex];
+            self.word.hidden = "";
+            for (let hiddenIteration = 0; hiddenIteration < tempHidden.length; hiddenIteration++) {
+              self.word.hidden += `${tempHidden[hiddenIteration]} `
+            }
+
+          }, 5000)
+          //timer
+
+          // setInterval(function() {
+          //   if (self.config.clickXPosition.length != 0) {
+          //     socket.emit('update canvas', self.config);
+          //   }
+          // }, 1000/60);
+        },
+        methods: {
+          emitMessage: function() {
+            this.socket.emit('send Message', this.inputContent);
+            this.inputContent = "";
+          },
+          rdnNumber: function(min, max) {
+              return Math.floor(Math.random() * (max - min + 1)) + min;
+          }
+        }
+      });
+    </script>
+  </body>
+</html>
